@@ -1,0 +1,276 @@
+@{
+    ViewData["Title"] = "Лизингов калкулатор";
+    Layout = null; // No layout to preserve the exact HTML design
+}
+
+<!--
+    Leasing Calculator Single Page View
+    ======================================
+    This page serves as the entire frontend of the application, eliminating the need 
+    for standard MVC layouts (_Layout.cshtml) or static assets in wwwroot. 
+    It leverages TailwindCSS via CDN for styling and jQuery via CDN for interactivity 
+    and AJAX requests to the backend.
+-->
+<!DOCTYPE html>
+<html class="light" lang="bg">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>@ViewData["Title"]</title>
+    
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+    
+    <style>
+        body {
+            font-family: 'Manrope', sans-serif;
+            min-height: max(884px, 100dvh);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .error-border {
+            border-color: #ef4444 !important;
+        }
+        .error-text {
+            color: #ef4444;
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-background-light to-slate-200 dark:from-background-dark dark:to-slate-950 text-slate-900 dark:text-slate-100 min-h-screen flex items-center justify-center p-4 sm:p-8">
+    
+    <div class="flex flex-col lg:flex-row bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden transition-all duration-500 border border-slate-200 dark:border-slate-800 max-w-full w-full lg:w-auto">
+        
+        <!-- Left Column: Form -->
+        <div class="w-full lg:w-[480px] p-6 sm:p-8 lg:p-10 flex flex-col justify-center relative z-10">
+            <div class="mb-8 text-center lg:text-left">
+                <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Параметри на лизинга</h1>
+                <p class="text-slate-500 dark:text-slate-400 text-sm mt-2">Попълнете данните, за да изчислите Вашата вноска</p>
+            </div>
+
+            <div class="space-y-5">
+                <div class="flex flex-col gap-2">
+                    <label class="text-slate-700 dark:text-slate-300 text-sm font-semibold">Цена на стоката с ДДС (лв.)</label>
+                    <div class="relative group">
+                        <input id="input-price" class="w-full h-14 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 text-base focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none" placeholder="0.00" type="number" min="0" step="0.01"/>
+                        <div class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
+                            <span class="material-symbols-outlined">payments</span>
+                        </div>
+                    </div>
+                    <span id="error-price" class="error-text">Моля, въведете валидна цена.</span>
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <label class="text-slate-700 dark:text-slate-300 text-sm font-semibold">Първоначална вноска (лв.)</label>
+                    <div class="relative group">
+                        <input id="input-downpayment" class="w-full h-14 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 text-base focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none" placeholder="0.00" type="number" min="0" step="0.01"/>
+                        <div class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
+                            <span class="material-symbols-outlined">account_balance_wallet</span>
+                        </div>
+                    </div>
+                    <span id="error-downpayment" class="error-text">Въведете валидна вноска (може да е 0).</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="flex flex-col gap-2">
+                        <label class="text-slate-700 dark:text-slate-300 text-sm font-semibold">Срок (месеци)</label>
+                        <select id="input-months" class="w-full h-14 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 text-base focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none appearance-none cursor-pointer">
+                            <option value="12">12</option>
+                            <option value="24">24</option>
+                            <option value="36">36</option>
+                            <option value="48">48</option>
+                            <option value="60">60</option>
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                        <label class="text-slate-700 dark:text-slate-300 text-sm font-semibold">Такса обработка (%)</label>
+                        <div class="relative">
+                            <input id="input-fee" class="w-full h-14 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 text-base focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none" placeholder="0.0" type="number" min="0" max="100" step="0.1"/>
+                            <div class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
+                                <span class="material-symbols-outlined text-sm">percent</span>
+                            </div>
+                        </div>
+                        <span id="error-fee" class="error-text">Моля, въведете %.</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <label class="text-slate-700 dark:text-slate-300 text-sm font-semibold">Месечна вноска (лв.)</label>
+                    <div class="relative group">
+                        <input id="input-monthly" class="w-full h-14 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 text-base font-bold text-primary" disabled="" placeholder="Автоматично изчисляване" type="text"/>
+                    </div>
+                </div>
+
+                <button id="btn-calculate" class="w-full h-14 mt-4 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-lg shadow-primary/30 flex items-center justify-center gap-2 transition-transform active:scale-95">
+                    <span class="material-symbols-outlined">calculate</span>
+                    ИЗЧИСЛИ
+                </button>
+            </div>
+        </div>
+
+        <!-- Right Column: Results -->
+        <div id="results-wrapper" style="display: none;">
+            <div id="results-section" class="w-full lg:w-[480px] h-full p-6 sm:p-8 lg:p-10 flex flex-col justify-center bg-slate-50 dark:bg-slate-800/30 border-t lg:border-t-0 lg:border-l border-slate-200 dark:border-slate-800 relative">
+                
+                <!-- Decorative background blob -->
+                <div class="absolute inset-0 overflow-hidden pointer-events-none rounded-r-3xl">
+                    <div class="absolute -top-[20%] -right-[10%] w-[300px] h-[300px] rounded-full bg-primary/5 blur-3xl"></div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900/80 rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200 dark:border-slate-700/50 relative z-10 backdrop-blur-xl">
+                    <h3 class="text-xl font-bold mb-6 flex items-center gap-2 text-slate-900 dark:text-white">
+                        <span class="material-symbols-outlined text-primary">analytics</span>
+                        Резултати
+                    </h3>
+                    <div class="space-y-5">
+                        <div class="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-800">
+                            <span class="text-slate-500 dark:text-slate-400 text-sm">Финансирана сума</span>
+                            <span id="res-financed" class="font-bold text-slate-900 dark:text-white">0.00 лв.</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-800">
+                            <span class="text-slate-500 dark:text-slate-400 text-sm">Общо изплатена сума</span>
+                            <span id="res-total" class="font-bold text-slate-900 dark:text-white">0.00 лв.</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-800">
+                            <span class="text-slate-500 dark:text-slate-400 text-sm">Общо такси и лихви</span>
+                            <span id="res-fees" class="font-bold text-primary">0.00 лв.</span>
+                        </div>
+                        <div class="flex justify-between items-center pt-2">
+                            <span class="text-slate-500 dark:text-slate-400 font-medium">Месечна вноска</span>
+                            <span id="res-monthly" class="font-extrabold text-2xl text-slate-900 dark:text-white tracking-tight">0.00 лв.</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-8 text-center relative z-10">
+                    <p class="text-[10px] text-slate-400 leading-relaxed uppercase tracking-widest">
+                        * Изчисленията са ориентировъчни и не представляват официална оферта.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- Integrate jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            function validateFields() {
+                var isValid = true;
+                
+                var priceStr = $('#input-price').val();
+                if(!priceStr || parseFloat(priceStr) <= 0) {
+                    $('#input-price').addClass('error-border');
+                    $('#error-price').show();
+                    isValid = false;
+                } else {
+                    $('#input-price').removeClass('error-border');
+                    $('#error-price').hide();
+                }
+
+                var downStr = $('#input-downpayment').val();
+                if(!downStr || parseFloat(downStr) < 0) {
+                    $('#input-downpayment').addClass('error-border');
+                    $('#error-downpayment').show();
+                    isValid = false;
+                } else {
+                    $('#input-downpayment').removeClass('error-border');
+                    $('#error-downpayment').hide();
+                }
+
+                var feeStr = $('#input-fee').val();
+                if(!feeStr || parseFloat(feeStr) < 0) {
+                    $('#input-fee').addClass('error-border');
+                    $('#error-fee').show();
+                    isValid = false;
+                } else {
+                    $('#input-fee').removeClass('error-border');
+                    $('#error-fee').hide();
+                }
+
+                return isValid;
+            }
+
+            $('#btn-calculate').click(function() {
+                if(!validateFields()) {
+                    return; // Prevent execution if invalid
+                }
+
+                var requestData = {
+                    Price: parseFloat($('#input-price').val()),
+                    DownPayment: parseFloat($('#input-downpayment').val() || 0),
+                    Months: parseInt($('#input-months').val()),
+                    ProcessingFeePercent: parseFloat($('#input-fee').val() || 0)
+                };
+
+                // Change button state
+                var btn = $(this);
+                var originalText = btn.html();
+                btn.html('<span class="material-symbols-outlined animate-spin">sync</span> ИЗЧИСЛЯВАНЕ...').prop('disabled', true);
+
+                $.ajax({
+                    url: '/Home/CalculateLease',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(requestData),
+                    success: function(response) {
+                        // Restore button
+                        btn.html(originalText).prop('disabled', false);
+
+                        // Update inputs and result fields formatting to BGN
+                        const formatCurrency = (val) => val.toLocaleString('bg-BG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' лв.';
+
+                        $('#input-monthly').val(formatCurrency(response.monthlyInstallment));
+                        
+                        $('#res-financed').text(formatCurrency(response.financedAmount));
+                        $('#res-total').text(formatCurrency(response.totalPaid));
+                        $('#res-fees').text(formatCurrency(response.totalFees));
+                        $('#res-monthly').text(formatCurrency(response.monthlyInstallment));
+
+                        // Show results
+                        $('#results-wrapper').fadeIn();
+                    },
+                    error: function(xhr, status, error) {
+                        btn.html(originalText).prop('disabled', false);
+                        alert('Възникна грешка при изчислението. Моля, опитайте отново.');
+                        console.error(error);
+                    }
+                });
+            });
+
+            // Clear validation errors on type
+            $('input').on('input', function() {
+                $(this).removeClass('error-border');
+                $(this).parent().siblings('.error-text').hide();
+            });
+        });
+    </script>
+</body>
+</html>

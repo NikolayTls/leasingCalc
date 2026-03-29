@@ -1,13 +1,17 @@
-﻿@{
+@{
     ViewData["Title"] = "Кредитен калкулатор";
 }
 
-<h2>@ViewData["Title"]</h2>
-
 <section class="calculator">
+    <h2>Лизингов калкулатор</h2>
     <input id="loanAmount" type="number" placeholder="Размер на кредита*"  />
+    <div class="error-msg" id="err-loanAmount"></div>
+    
     <input id="months" type="number" placeholder="Срок(месеци)*"/>
+    <div class="error-msg" id="err-months"></div>
+    
     <input id="interest" type="number" placeholder="Лихва%*"/>
+    <div class="error-msg" id="err-interest"></div>
 
     <button id="btnCalculate">Изчисли</button>
 

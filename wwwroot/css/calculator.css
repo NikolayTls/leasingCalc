@@ -1,0 +1,85 @@
+/* calculator.css */
+
+/* Center everything vertically and horizontally */
+body, html {
+    height: 100%;
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f4f7f9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+h2 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.calculator {
+    background: #fff;
+    padding: 40px 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
+}
+
+.calculator h1 {
+    margin-bottom: 25px;
+    font-size: 1.5rem;
+    color: #4a90e2;
+}
+
+.calculator input {
+    width: 80%;
+    padding: 12px 15px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.calculator input:focus {
+    border-color: #4a90e2;
+    outline: none;
+}
+
+.calculator button {
+    width: 85%;
+    padding: 12px;
+    margin-top: 15px;
+    background: #4a90e2;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.calculator button:hover {
+    background: #357abd;
+}
+
+#result {
+    margin-top: 20px;
+    background: #f1f6fb;
+    padding: 15px;
+    border-radius: 10px;
+    display: none;
+    text-align: left;
+}
+
+#result p {
+    margin: 8px 0;
+    font-weight: 500;
+}
+
+#result span {
+    font-weight: bold;
+    color: #4a90e2;
+}
